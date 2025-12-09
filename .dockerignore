@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Project specific
+cache/
+output/
+books/*.txt
+books/*.epub
+*.log
+
+# Documentation (not needed in container)
+*.md
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Tests
+test_*.py
+check_setup.py
+
+# Windows
+*.bat
+
+# Deployment scripts
+unraid_deploy.sh

@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  # GPU-enabled service (default)
+  audiobook-ai-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ebook2multispeakeraudiobook:latest
+    container_name: Ebook2MultiSpeakerAudiobook-gpu
+    profiles: ["gpu", "default"]
+    ports:
+      - "7860:7860"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-2.5-flash}
+      - DEVICE=cuda:0
+      - CUDA_VISIBLE_DEVICES=0
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+      - PYTHONUNBUFFERED=1
+      - HF_HOME=/app/cache/huggingface
+      - HF_HUB_CACHE=/app/index-tts/checkpoints/hf_cache
+      - TRANSFORMERS_CACHE=/app/cache/transformers
+      # Books directory (for Unraid: set to /books and map your storage)
+      - BOOKS_DIR=/app/books
+    volumes:
+      # Input books directory - For Unraid, change to your books location:
+      # Example: - /mnt/user/Media/Books:/app/books
+      # Example: - /mnt/user/appdata/Ebook2audiobook/books:/app/books
+      - ./books:/app/books
+      
+      # Output audiobooks directories (separate multi/single speaker)
+      # For Plex integration, map these directly to your audiobooks library:
+      # Example: - /mnt/user/Media/Audiobooks/Multi-Speaker:/app/output/multi_final
+      # Example: - /mnt/user/Media/Audiobooks/Single-Speaker:/app/output/single_final
+      - ./output/multi_final:/app/output/multi_final
+      - ./output/single_final:/app/output/single_final
+      
+      # Voice samples for custom characters
+      - ./voice_samples:/app/voice_samples
+      # IndexTTS models (persistent across restarts)
+      - ./index-tts/checkpoints:/app/index-tts/checkpoints
+      # Cache for processed data
+      - ./cache:/app/cache
+    networks:
+      - audiobook-net
+    
+    # GPU support (NVIDIA required)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 16G  # Adjust based on available RAM
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s  # IndexTTS models take time to load
+  
+  # CPU-only service (for systems without GPU)
+  audiobook-ai-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ebook2multispeakeraudiobook:latest
+    container_name: Ebook2MultiSpeakerAudiobook-cpu
+    profiles: ["cpu"]
+    ports:
+      - "7860:7860"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-2.5-flash}
+      - DEVICE=cpu
+      - CUDA_VISIBLE_DEVICES=''
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+      - PYTHONUNBUFFERED=1
+      - HF_HOME=/app/cache/huggingface
+      - HF_HUB_CACHE=/app/index-tts/checkpoints/hf_cache
+      - TRANSFORMERS_CACHE=/app/cache/transformers
+      # Books directory (for Unraid: set to /books and map your storage)
+      - BOOKS_DIR=/app/books
+    volumes:
+      # Input books directory - For Unraid, change to your books location:
+      # Example: - /mnt/user/Media/Books:/app/books
+      # Example: - /mnt/user/appdata/Ebook2audiobook/books:/app/books
+      - ./books:/app/books
+      
+      # Output audiobooks directories (separate multi/single speaker)
+      # For Plex integration, map these directly to your audiobooks library:
+      # Example: - /mnt/user/Media/Audiobooks/Multi-Speaker:/app/output/multi_final
+      # Example: - /mnt/user/Media/Audiobooks/Single-Speaker:/app/output/single_final
+      - ./output/multi_final:/app/output/multi_final
+      - ./output/single_final:/app/output/single_final
+      
+      # Voice samples for custom characters
+      - ./voice_samples:/app/voice_samples
+      # IndexTTS models (persistent across restarts)
+      - ./index-tts/checkpoints:/app/index-tts/checkpoints
+      # Cache for processed data
+      - ./cache:/app/cache
+    networks:
+      - audiobook-net
+    
+    # Resource limits for CPU mode (adjust based on available RAM)
+    deploy:
+      resources:
+        limits:
+          cpus: '8'  # Adjust based on available CPUs
+          memory: 32G  # CPU mode may need more RAM
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s  # CPU mode takes longer to load

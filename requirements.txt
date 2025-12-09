@@ -1,0 +1,94 @@
+# ============================================================
+# SYSTEM DEPENDENCIES (must be installed separately)
+# ============================================================
+# 
+# CUDA Toolkit 12.8+ (for GPU acceleration):
+#   Ubuntu/Debian: 
+#     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+#     sudo dpkg -i cuda-keyring_1.1-1_all.deb
+#     sudo apt-get update
+#     sudo apt-get install cuda-toolkit-12-8
+#
+# Python 3.10 development headers (required for CUDA kernel compilation):
+#   Ubuntu/Debian: sudo apt-get install python3.10-dev
+#   Fedora/RHEL: sudo dnf install python3.10-devel
+#   macOS: Included with Xcode Command Line Tools
+#
+# FFmpeg (for audio processing):
+#   Ubuntu/Debian: sudo apt-get install ffmpeg
+#   macOS: brew install ffmpeg
+#   Windows: Download from https://ffmpeg.org/download.html
+#
+# ============================================================
+
+# Core dependencies
+gradio>=5.0.0
+
+# Google Gen AI SDK (replacement for deprecated google-generativeai)
+google-genai
+
+# Text processing
+# Use `pypdf` (actively maintained) instead of older PyPDF2
+pypdf
+ebooklib
+beautifulsoup4
+nltk
+
+# Document format support
+python-docx>=0.8.11  # For .docx files
+odfpy>=1.4.1         # For .odt files
+python-pptx>=0.6.21  # For .pptx files (bonus!)
+striprtf>=0.0.26     # For .rtf files
+
+# PyTorch and Audio processing (IndexTTS requirements)
+# IMPORTANT: These versions MUST match IndexTTS2 requirements exactly
+# For Windows with CUDA 12.8+, use the default torch installation
+torch==2.8.*
+torchaudio==2.8.*
+torchvision>=0.15.0
+numpy==1.26.2
+librosa==0.10.2.post1
+soundfile>=0.12.0
+numba==0.58.1
+
+# IndexTTS2 dependencies - EXACT VERSIONS REQUIRED
+transformers==4.52.1
+tokenizers==0.21.0
+omegaconf>=2.3.0
+safetensors==0.5.2
+accelerate==1.8.1
+sentencepiece>=0.2.1
+einops>=0.8.1
+json5>=0.10.0
+
+# ModelScope/HuggingFace for model downloads
+huggingface-hub[cli,hf_xet]>=0.16.0
+modelscope==1.27.0
+
+# Audio processing
+pydub
+
+# Progress bars
+tqdm>=4.67.1
+
+# For Docker health checks
+requests
+
+# Additional dependencies discovered during setup
+cn2an==0.5.22
+cython==3.0.7
+descript-audiotools==0.7.2
+ffmpeg-python==0.2.0
+g2p-en==2.1.0
+jieba==0.42.1
+keras==2.9.0
+matplotlib==3.8.2
+munch==4.0.0
+opencv-python==4.9.0.80
+pandas==2.3.2
+tensorboard==2.9.1
+textstat>=0.7.10
+wetextprocessing
+
+# Optional: DeepSpeed for potential speedups (skip on Windows if installation fails)
+# deepspeed>=0.9.0

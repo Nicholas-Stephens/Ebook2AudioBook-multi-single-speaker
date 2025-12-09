@@ -1,0 +1,82 @@
+# API keys and sensitive configuration
+.env
+.env.local
+.env.*.local
+config.py
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Cache directories
+cache/
+*.cache
+huggingface/
+transformers/
+
+# Log files
+*.log
+logs/
+
+# Output files (generated audiobooks)
+output/
+output/chunks/
+output/final/
+output/multi_final/
+output/single_final/
+output/test_audio/
+
+# Books (user content) - entire directory
+books/
+!books/.gitkeep
+
+# Voice samples - exclude audio files but keep documentation
+voice_samples/*.wav
+voice_samples/*.mp3
+voice_samples/*.flac
+voice_samples/*.ogg
+!voice_samples/README.md
+!voice_samples/EXAMPLE_RECORDING_SCRIPT.txt
+
+# IndexTTS checkpoints (too large for git - download separately)
+index-tts/checkpoints/
+!index-tts/checkpoints/README.md
+
+# HuggingFace and model cache
+.cache/
+/cache/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# MacOS specific
+.AppleDouble
+.LSOverride
+
+# Linux specific
+.directory
+.Trash-*
