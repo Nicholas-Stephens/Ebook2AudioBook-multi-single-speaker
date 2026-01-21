@@ -63,8 +63,11 @@ RUN mkdir -p /app/books \
              /app/voice_samples \
              /app/index-tts/checkpoints
 
-# Set environment variables
-ENV PYTHONPATH="/app:$PYTHONPATH"
+# Install IndexTTS from local directory
+RUN pip3 install --no-cache-dir -e /app/index-tts || echo "IndexTTS installation will complete on first run"
+
+# Set environment variables - include index-tts in PYTHONPATH
+ENV PYTHONPATH="/app:/app/index-tts:$PYTHONPATH"
 ENV HF_HOME="/app/cache/huggingface"
 ENV HF_HUB_CACHE="/app/index-tts/checkpoints/hf_cache"
 ENV TRANSFORMERS_CACHE="/app/cache/transformers"

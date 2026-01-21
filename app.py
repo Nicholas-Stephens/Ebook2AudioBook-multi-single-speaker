@@ -1735,7 +1735,6 @@ if __name__ == "__main__":
             server_name=server_name,
             server_port=server_port,
             share=False,
-            show_api=False,
             inbrowser=False  # Don't auto-open browser in Docker
         )
     except Exception as e:
@@ -1744,6 +1743,5 @@ if __name__ == "__main__":
         app.launch(
             server_name="0.0.0.0",  # Fallback to all interfaces
             server_port=server_port,
-            share=False,
-            show_api=False
+            share=False
         )
