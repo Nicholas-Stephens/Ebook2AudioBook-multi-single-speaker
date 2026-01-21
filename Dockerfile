@@ -66,7 +66,7 @@ RUN mkdir -p /app/books \
 # Install IndexTTS - copy to site-packages directly since editable install can be fragile
 RUN cd /app/index-tts && \
     pip3 install --no-cache-dir . 2>&1 | tee /tmp/indextts_install.log && \
-    python3 -c "from indextts import IndexTTS; print('✅ IndexTTS installed and importable')" || \
+    python3 -c "from indextts.infer import IndexTTS; print('✅ IndexTTS installed and importable')" || \
     (echo "❌ IndexTTS import failed, checking log:" && cat /tmp/indextts_install.log && exit 1)
 
 # Set environment variables - include index-tts in PYTHONPATH as fallback
