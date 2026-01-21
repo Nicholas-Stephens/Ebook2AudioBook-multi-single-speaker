@@ -81,15 +81,16 @@ ENV CUDA_VISIBLE_DEVICES=0
 # ENV DEVICE=cpu
 # ENV CUDA_VISIBLE_DEVICES=''
 
-# Download IndexTTS models during build (auto-setup everything)
-RUN python3 /app/download_models.py /app/index-tts/checkpoints || echo "⚠️ Model download will complete on first run if automatic download fails"
+# Copy and set up entrypoint script (downloads models on first run if needed)
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Expose the port
 EXPOSE 7860
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+# Health check - increased start period for model download on first run
+HEALTHCHECK --interval=30s --timeout=30s --start-period=600s --retries=3 \
     CMD curl -f http://localhost:7860/ || exit 1
 
-# Run the application
-CMD ["python3", "app.py"]
+# Use entrypoint script to check/download models before starting app
+ENTRYPOINT ["/app/entrypoint.sh"]
