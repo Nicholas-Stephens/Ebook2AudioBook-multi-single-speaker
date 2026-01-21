@@ -63,8 +63,10 @@ RUN mkdir -p /app/books \
              /app/voice_samples \
              /app/index-tts/checkpoints
 
-# Install IndexTTS from local directory
-RUN pip3 install --no-cache-dir -e /app/index-tts || echo "IndexTTS installation will complete on first run"
+# Install IndexTTS from local directory (ensure it's installed properly)
+RUN cd /app/index-tts && pip3 install --no-cache-dir -e . && \
+    python3 -c "import indextts; print('IndexTTS installed successfully')" || \
+    echo "Warning: IndexTTS import test failed"
 
 # Set environment variables - include index-tts in PYTHONPATH
 ENV PYTHONPATH="/app:/app/index-tts:$PYTHONPATH"
