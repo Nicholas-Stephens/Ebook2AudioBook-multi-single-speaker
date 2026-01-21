@@ -148,6 +148,52 @@ class AudiobookGenerator:
         
         return sorted(books)
     
+    def get_book_folders(self) -> List[str]:
+        """Get list of folders containing books (including root level books as '📚 Root Folder')"""
+        book_folder = Path(BOOKS_DIR)
+        supported_formats = ['.txt', '.pdf', '.epub', '.docx', '.odt', '.rtf', '.doc']
+        folders = set()
+        has_root_books = False
+        
+        if book_folder.exists():
+            for file in book_folder.rglob("*"):
+                if file.is_file() and file.suffix.lower() in supported_formats:
+                    relative_path = file.relative_to(book_folder)
+                    parent = relative_path.parent
+                    if str(parent) == ".":
+                        has_root_books = True
+                    else:
+                        folders.add(str(parent))
+        
+        result = sorted(list(folders))
+        if has_root_books:
+            result.insert(0, "📚 Root Folder")
+        return result
+    
+    def get_books_in_folder(self, folder: str) -> List[str]:
+        """Get list of books within a specific folder"""
+        book_folder = Path(BOOKS_DIR)
+        supported_formats = ['.txt', '.pdf', '.epub', '.docx', '.odt', '.rtf', '.doc']
+        books = []
+        
+        if not folder or not book_folder.exists():
+            return books
+        
+        # Handle root folder selection
+        if folder == "📚 Root Folder":
+            for file in book_folder.iterdir():
+                if file.is_file() and file.suffix.lower() in supported_formats:
+                    books.append(file.name)
+        else:
+            target_folder = book_folder / folder
+            if target_folder.exists():
+                for file in target_folder.iterdir():
+                    if file.is_file() and file.suffix.lower() in supported_formats:
+                        # Return full relative path for proper file access
+                        books.append(f"{folder}/{file.name}")
+        
+        return sorted(books)
+    
     def analyze_book_speakers(self, book_path: str) -> Tuple[Dict[str, Any], str]:
         """Analyze book and extract speaker information"""
         try:
@@ -357,6 +403,18 @@ generator = AudiobookGenerator()
 def refresh_book_list():
     """Refresh the list of available books"""
     return gr.update(choices=generator.get_book_files())
+
+def refresh_folder_list():
+    """Refresh the list of book folders"""
+    folders = generator.get_book_folders()
+    return gr.update(choices=folders, value=folders[0] if folders else None)
+
+def get_books_in_selected_folder(folder: str):
+    """Get books in the selected folder and update book dropdown"""
+    if not folder:
+        return gr.update(choices=[], value=None)
+    books = generator.get_books_in_folder(folder)
+    return gr.update(choices=books, value=books[0] if books else None)
 
 def refresh_voice_samples():
     """Reload voice samples from directory"""
@@ -1126,8 +1184,9 @@ def delete_book(book_file):
         return f"❌ Delete failed: {str(e)}", gr.Dropdown(choices=generator.get_book_files())
 
 def refresh_single_book_list():
-    """Refresh book list for single speaker tab"""
-    return gr.Dropdown(choices=generator.get_book_files())
+    """Refresh folder list for single speaker tab (legacy function - uses folder navigation now)"""
+    folders = generator.get_book_folders()
+    return gr.Dropdown(choices=folders, value=folders[0] if folders else None)
 
 # Create Gradio interface
 with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
@@ -1200,13 +1259,22 @@ with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
                 with gr.Column(scale=2):
                     gr.HTML("<h2>📚 Book Selection</h2>")
                     
+                    # Folder selection (first step)
                     with gr.Row():
-                        book_dropdown = gr.Dropdown(
-                            choices=generator.get_book_files(),
-                            label="Select Book",
-                            info=f"Choose from books in '{BOOKS_DIR}' folder (scans subfolders)"
+                        folder_dropdown = gr.Dropdown(
+                            choices=generator.get_book_folders(),
+                            label="📁 Select Folder",
+                            info="Choose a folder to browse books"
                         )
                         refresh_btn = gr.Button("🔄 Refresh", scale=0)
+                    
+                    # Book selection (second step - populated based on folder)
+                    with gr.Row():
+                        book_dropdown = gr.Dropdown(
+                            choices=[],
+                            label="📖 Select Book",
+                            info="Books in the selected folder"
+                        )
                     
                     # Upload and Delete section
                     with gr.Row():
@@ -1373,13 +1441,22 @@ with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
                 with gr.Column(scale=2):
                     gr.HTML("<h2>📚 Book Selection & Analysis</h2>")
                     
+                    # Folder selection (first step)
                     with gr.Row():
-                        single_book_dropdown = gr.Dropdown(
-                            choices=generator.get_book_files(),
-                            label="Select Book",
-                            info=f"Choose from books in '{BOOKS_DIR}' folder (scans subfolders)"
+                        single_folder_dropdown = gr.Dropdown(
+                            choices=generator.get_book_folders(),
+                            label="📁 Select Folder",
+                            info="Choose a folder to browse books"
                         )
                         single_refresh_btn = gr.Button("🔄 Refresh", scale=0)
+                    
+                    # Book selection (second step - populated based on folder)
+                    with gr.Row():
+                        single_book_dropdown = gr.Dropdown(
+                            choices=[],
+                            label="📖 Select Book",
+                            info="Books in the selected folder"
+                        )
                     
                     # Upload and Delete section
                     with gr.Row():
@@ -1579,8 +1656,15 @@ with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
         outputs=[voice_preview_audio, voice_preview_status]
     )
     
+    # Multi Speaker folder/book navigation
     refresh_btn.click(
-        fn=refresh_book_list,
+        fn=refresh_folder_list,
+        outputs=[folder_dropdown]
+    )
+    
+    folder_dropdown.change(
+        fn=get_books_in_selected_folder,
+        inputs=[folder_dropdown],
         outputs=[book_dropdown]
     )
     
@@ -1592,6 +1676,9 @@ with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
     ).then(
         fn=lambda: gr.update(visible=True),
         outputs=[upload_status]
+    ).then(
+        fn=refresh_folder_list,
+        outputs=[folder_dropdown]
     )
     
     delete_btn.click(
@@ -1601,6 +1688,9 @@ with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
     ).then(
         fn=lambda: gr.update(visible=True),
         outputs=[upload_status]
+    ).then(
+        fn=refresh_folder_list,
+        outputs=[folder_dropdown]
     )
     
     analyze_btn.click(
@@ -1654,7 +1744,13 @@ with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
     
     # Single Speaker Generation event handlers
     single_refresh_btn.click(
-        fn=refresh_single_book_list,
+        fn=refresh_folder_list,
+        outputs=[single_folder_dropdown]
+    )
+    
+    single_folder_dropdown.change(
+        fn=get_books_in_selected_folder,
+        inputs=[single_folder_dropdown],
         outputs=[single_book_dropdown]
     )
     
@@ -1666,6 +1762,9 @@ with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
     ).then(
         fn=lambda: gr.update(visible=True),
         outputs=[single_upload_status]
+    ).then(
+        fn=refresh_folder_list,
+        outputs=[single_folder_dropdown]
     )
     
     single_delete_btn.click(
@@ -1675,6 +1774,9 @@ with gr.Blocks(title="AI Audiobook Generator", theme=gr.themes.Soft()) as app:
     ).then(
         fn=lambda: gr.update(visible=True),
         outputs=[single_upload_status]
+    ).then(
+        fn=refresh_folder_list,
+        outputs=[single_folder_dropdown]
     )
     
     single_analyze_btn.click(
