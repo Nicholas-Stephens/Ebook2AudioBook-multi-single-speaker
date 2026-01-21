@@ -63,12 +63,13 @@ RUN mkdir -p /app/books \
              /app/voice_samples \
              /app/index-tts/checkpoints
 
-# Install IndexTTS from local directory (ensure it's installed properly)
-RUN cd /app/index-tts && pip3 install --no-cache-dir -e . && \
-    python3 -c "import indextts; print('IndexTTS installed successfully')" || \
-    echo "Warning: IndexTTS import test failed"
+# Install IndexTTS - copy to site-packages directly since editable install can be fragile
+RUN cd /app/index-tts && \
+    pip3 install --no-cache-dir . 2>&1 | tee /tmp/indextts_install.log && \
+    python3 -c "from indextts import IndexTTS; print('✅ IndexTTS installed and importable')" || \
+    (echo "❌ IndexTTS import failed, checking log:" && cat /tmp/indextts_install.log && exit 1)
 
-# Set environment variables - include index-tts in PYTHONPATH
+# Set environment variables - include index-tts in PYTHONPATH as fallback
 ENV PYTHONPATH="/app:/app/index-tts:$PYTHONPATH"
 ENV HF_HOME="/app/cache/huggingface"
 ENV HF_HUB_CACHE="/app/index-tts/checkpoints/hf_cache"
